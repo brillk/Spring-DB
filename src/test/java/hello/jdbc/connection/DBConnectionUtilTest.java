@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.*;
 class DBConnectionUtilTest {
 
     @Test
-     void connection() {
+    void connection() {
         Connection connection = DBConnectionUtil.getConnection();
         assertThat(connection).isNotNull();
     }
