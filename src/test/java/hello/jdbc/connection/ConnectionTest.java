@@ -1,6 +1,7 @@
 package hello.jdbc.connection;
 
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,23 @@ public class ConnectionTest {
     void dataSourceDriverManager() throws SQLException {
         //DriverManagerDataSource = 항상 새로운 커넥션을 획득한다
         DataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+        useDataSource(dataSource);
+    }
+
+    @Test
+    void dataSourceConnectionPool() throws SQLException {
+
+        // hikari는 기본적으로 10개의 풀을 가지고 있다. 11개가 되면 1이 비어있을때까지 기다렸다가 값을 준다,
+        // 시간을 정할 수 있는데, 그 시간 마저 초과하면 에러
+
+        //커넥션 풀링
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(URL);
+        dataSource.setUsername(USERNAME);
+        dataSource.setPassword(PASSWORD);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setPoolName("MyPool");
+
         useDataSource(dataSource);
     }
 
