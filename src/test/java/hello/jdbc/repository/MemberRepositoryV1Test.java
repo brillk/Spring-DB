@@ -32,7 +32,7 @@ class MemberRepositoryV1Test {
         dataSource.setUsername(USERNAME);
         dataSource.setPoolName(PASSWORD);
 
-        //conn 0이 계속 나오는 이유는 close를 하고 나서 다시 반환해서, 0번째의 conn을 계속 볼 수 있다
+        //conn 0이 계속 나오는 이유는 close를 하고 나서 풀에서 다시 반환해서, 0번째의 conn을 계속 볼 수 있다
         repository = new MemberRepositoryV1(dataSource);
     }
 
