@@ -2,47 +2,71 @@ package hello.jdbc.service;
 
 
 import hello.jdbc.domain.Member;
+import hello.jdbc.repository.MemberRepository;
 import hello.jdbc.repository.MemberRepositoryV3;
+import hello.jdbc.repository.MemberRepositoryV4_1;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 
-import static hello.jdbc.connection.ConnectionConst.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 /**
- * 트랜잭션 - 트랜잭션 매니저
+ * 예외 누수 문제 해결
+ * SQLException 제거
+ *
+ * MemberRepository 인터페이스 의존
  */
 
-class MemberServiceV3_1Test {
+@Slf4j
+@SpringBootTest
+class MemberServiceV4Test {
 
     public static final String MEMBER_A = "memberA";
     public static final String MEMBER_B = "memberB";
     public static final String MEMBER_EX = "ex";
 
 
-    private MemberRepositoryV3 memberRepository;
-    private MemberServiceV3_1 memberService;
+    //의존관계 주입
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private MemberServiceV4 memberService;
 
-    @BeforeEach
-    void before() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
-        memberRepository = new MemberRepositoryV3(dataSource);
+    @TestConfiguration
+    static class TestConfig {
 
-        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        memberService = new MemberServiceV3_1(transactionManager, memberRepository);
+        private final DataSource dataSource;
+
+        // 스프링이 직접 만든 걸 넣어줬다
+        public TestConfig(DataSource dataSource) {
+            this.dataSource = dataSource;
+        }
+
+        @Bean
+        MemberRepository memberRepository() {
+            return new MemberRepositoryV4_1(dataSource);
+        }
+
+        @Bean
+        MemberServiceV4 memberServiceV4() {
+            return new MemberServiceV4(memberRepository());
+        }
     }
 
+
     @AfterEach
-    void after() throws SQLException {
+    void after() {
         // 리소스 정리하기
         memberRepository.delete(MEMBER_A);
         memberRepository.delete(MEMBER_B);
@@ -51,7 +75,7 @@ class MemberServiceV3_1Test {
 
     @Test
     @DisplayName("정상 이체")
-    void accountTransfer() throws SQLException {
+    void accountTransfer() {
         //given
         Member memberA = new Member(MEMBER_A, 10000);
         Member memberB = new Member(MEMBER_B, 10000);
@@ -71,7 +95,7 @@ class MemberServiceV3_1Test {
 
     @Test
     @DisplayName("이체 중 예외 발생")
-    void accountTransferEx() throws SQLException {
+    void accountTransferEx()  {
         //given
         Member memberA = new Member(MEMBER_A, 10000);
         Member memberEx = new Member(MEMBER_EX, 10000);
@@ -81,8 +105,6 @@ class MemberServiceV3_1Test {
         //when
         assertThatThrownBy(() -> memberService.accountTransfer(memberA.getMemberId(), memberEx.getMemberId(), 2000))
                 .isInstanceOf(IllegalStateException.class);
-
-
 
         //then
         Member findMemberA = memberRepository.findById(memberA.getMemberId());
