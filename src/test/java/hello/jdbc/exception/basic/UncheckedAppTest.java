@@ -1,13 +1,16 @@
 package hello.jdbc.exception.basic;
 
+import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.naming.ldap.Control;
 import java.net.ConnectException;
 import java.sql.SQLException;
 
 // 기본은 언체크 예외처리를 사용하는것 이다
 
+@Slf4j
 public class UncheckedAppTest {
 
     @Test
@@ -17,6 +20,16 @@ public class UncheckedAppTest {
                 .isInstanceOf(RuntimeException.class);
     }
 
+    @Test
+    void printEx() {
+        Controller controller = new Controller();
+
+        try {
+            controller.request();
+        } catch (Exception e) {
+            log.info("ex");
+        }
+    }
 
     static class Controller {
 
